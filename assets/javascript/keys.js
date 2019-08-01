@@ -5,3 +5,7 @@ exports.spotify = {
   secret: process.env.SPOTIFY_SECRET
 };
 
+exports.bandsIn = {
+  id: process.env.BANDS_ID
+};
+

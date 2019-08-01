@@ -1,29 +1,28 @@
-  var Spotify = require('node-spotify-api');
- 
-  var spotify = new Spotify({
-    id: "359cebc4827e47e385662e776290caf5",
-    secret: "69ea8ef6dbdc4b188bd525bccc498b17"
-  });
-
+require("dotenv").config();  
+var Spotify = require('node-spotify-api');
+var SpotifyWebApi = require('spotify-web-api-node');
+//import keys for spotify from env
+var keys = require("./keys");
+var spotify = new Spotify(keys.spotify);
+//import keys for bands in town from env
+var bandsIn = (keys.bandsIn); 
 var axios = require('axios');
+//store keys in secret file 
 require("dotenv").config();
-// //import keys
-// var keys = require("./keys.js");
-//setup spotify
-//setup spotify
-// var spotify = new Spotify(keys.spotify);
-//setup bandsintown
-var bandsintown = require('bandsintown');
 // process.env.PORT lets the port be set by Heroku
 var PORT = process.env.PORT || 8080
+
+var moment = require("moment");
+//create variable to store node arguments
 var nodeArgs = process.argv;
-var movieName = "";
-var concertName = null; 
 var bandName = ""; 
+var movieName = ""
+var songName = ""; 
+var userInput = process.argv[2];
 
 //Spotify Authentication
 
-//loop for grabbing movie name
+//loop for grabbing starting and stopping point of user input
   for (var i = 3; i < nodeArgs.length; i++) {
 
     if (i > 3 && i < nodeArgs.length) {
@@ -33,22 +32,43 @@ var bandName = "";
       movieName += nodeArgs[i];
     }
 }
-  //loop for grabbing bands information
-  for (var i = 3; i < nodeArgs.length; i++) {
+//loop for grabbing spotify information
+for (var i = 3; i < nodeArgs.length; i++) {
 
-    if (i > 3 && i < nodeArgs.length) {
-      bandName = bandName + "+" + nodeArgs[i];
-    }
-    else {
-      bandName += nodeArgs[i];
-    }
+  if (i > 3 && i < nodeArgs.length) {
+    songName = songName + "+" + nodeArgs[i];
   }
-//get data from omdb and write to console
+  else {
+    songName += nodeArgs[i];
+  }
+ 
+}
+  // loop for grabbing bands information
+for (var i = 3; i < nodeArgs.length; i++) {
+
+  if (i > 3 && i < nodeArgs.length) {
+    bandName = bandName + "+" + nodeArgs[i];
+  }
+  else {
+    bandName += nodeArgs[i];
+  }
+}
+// get data from omdb and write to console
 function movieThis()
 {
+  //null check 
+  if (movieName == 0)
+  {
+    movieName = "Mr.Nobody"; 
+    }
+  
   var queryUrl = "http://www.omdbapi.com/?t=" + movieName + "&plot=short&apikey=trilogy";
   axios.get(queryUrl).then(
     function (response) {
+      if (err) {
+        console.log("err: " + err)
+        return;
+      }
       // Then we print out the imdbRating
       console.log("The movie's title is: " + response.data.Title);
       console.log("The movie's year is: " + response.data.Year);
@@ -60,12 +80,7 @@ function movieThis()
       console.log("The movie's actors are: " + response.data.Actors);
     } //create if statement to check if movieName is there
 );
-console.log(queryUrl);
-  }
-
-//grab user argument for movie-this 
-var userInput = process.argv[2];
-console.log(userInput); 
+} 
 
 switch(userInput){
   case "movie-this":
@@ -74,26 +89,56 @@ switch(userInput){
   case "concert-this":
     concertThis();
     break; 
+  case "spotify-this":
+    spotifyThis();
+    break; 
 }
 
-//request information from bands in town API
-function concertThis()
-{
-  spotify.search({ type: 'track', query: 'All the Small Things' })
-  .then(function(response) {
-    console.log(response);
-  })
-  .catch(function(err) {
-    console.log(err);
-  });
-
-  // axios.get(queryURL).then(
-  //     function(bandResponse){
-  //         console.log("Venue: " + bandResponse.data[0].venue.name);
-  //         console.log("City: " + bandResponse.data[0].venue.city);
-  //         console.log(moment(bandResponse.data[0].datetime).format("MM/DD/YYYY"));
-  //     }
-  // );
+function spotifyThis() {
+  if (songName == 0)
+  {
+    songName = "The Sign Ace of Base"
+        }
+      spotify.search({
+        type: "track",
+        query: songName,
+        limit: 5
+      }, function (err, data) {
+        if (err) {
+          console.log("err: " + err)
+          return;
+        }
+        var songs = data.tracks.items;
+        // console.log("songs: " + JSON.stringify(songs));
+        for (var i = 0; i < songs.length; i++) {
+          console.log("----------------");
+          console.log("artist name: " + JSON.stringify(songs[i].artists[0].name));
+          console.log("song name: " + songs[i].name);
+          console.log("preview link: " + songs[i].preview_url);
+          console.log("album: " + songs[i].album.name);
+        
+        }
+      })
 }
 
+function concertThis() {
+  var queryUrl = "https://rest.bandsintown.com/artists/" + bandName + "/events?app_id=" + bandsIn;
+  axios.get(queryUrl).then(
+    function (response, err) {
+      if (err) {
+        console.log("err: " + err);
+      }
+      console.log("You're in luck, " + bandName + " is playing soon!")
+      console.log(bandName + " will be playing at the " +response.data[0].venue .name);
+        ;       // console.log(response.data[0].venue.latitude);
+  
+      console.log("That is located in " + response.data[0].venue.city + "," + response.data[0].venue.region + "" + response.data[0].venue.country);
+      var eventDate = response.data[0].datetime;
+    console.log("The date of the next show is: " + moment(eventDate).format("MM/DD/YYYY"));
+    })
+}
+
+
+
+ 
 
