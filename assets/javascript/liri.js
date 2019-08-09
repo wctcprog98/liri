@@ -11,6 +11,14 @@ var axios = require('axios');
 require("dotenv").config();
 // process.env.PORT lets the port be set by Heroku
 var PORT = process.env.PORT || 8080
+var fs = require("fs");
+//read file
+// var fs = require("fs");
+
+// fs.readFile(".", "utf8", function (err, data) {
+//   if (err) throw err;
+//   console.log(data); 
+// })
 
 var moment = require("moment");
 //create variable to store node arguments
@@ -64,10 +72,9 @@ function movieThis()
   
   var queryUrl = "http://www.omdbapi.com/?t=" + movieName + "&plot=short&apikey=trilogy";
   axios.get(queryUrl).then(
-    function (response) {
+    function (response, err) {
       if (err) {
         console.log("err: " + err)
-        return;
       }
       // Then we print out the imdbRating
       console.log("The movie's title is: " + response.data.Title);
@@ -92,7 +99,11 @@ switch(userInput){
   case "spotify-this":
     spotifyThis();
     break; 
+  case "do-what-it-says":
+    doWhatItSays();
+    break; 
 }
+
 
 function spotifyThis() {
   if (songName == 0)
@@ -129,13 +140,51 @@ function concertThis() {
         console.log("err: " + err);
       }
       console.log("You're in luck, " + bandName + " is playing soon!")
-      console.log(bandName + " will be playing at the " +response.data[0].venue .name);
+      console.log(bandName + " will be playing at the " + response.data[0].venue.name);
         ;       // console.log(response.data[0].venue.latitude);
   
       console.log("That is located in " + response.data[0].venue.city + "," + response.data[0].venue.region + "" + response.data[0].venue.country);
       var eventDate = response.data[0].datetime;
     console.log("The date of the next show is: " + moment(eventDate).format("MM/DD/YYYY"));
     })
+}
+
+function doWhatItSays() {
+  fs.readFile("random.txt", "utf8", function (error, data) {
+
+    // If the code experiences any errors it will log the error to the console.
+    if (error) {
+      return console.log(error);
+    }
+
+    // We will then print the contents of data
+ 
+
+    // Then split it by commas (to make it more readable)
+    var dataArr = data.split(",");
+
+    // We will then re-display the content as an array for later use.
+  
+    var argument = dataArr[0];
+  var userSelection = dataArr[1]; 
+
+  console.log(argument);
+    console.log(userSelection); 
+    
+    if (argument == "spotify-this-song") {
+      songName = userSelection; 
+      spotifyThis();
+    }
+    else if (argument == "concert-this-song") {
+      bandName = userSelection;
+      concertThis(); 
+    }
+    else if (argument == "movie-this-movie")
+    movieName = userSelection; 
+      movieThis(); 
+      
+
+  });
 }
 
 
